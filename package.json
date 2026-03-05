@@ -1,0 +1,44 @@
+{
+  "name": "klinik-AI",
+  "private": true,
+  "workspaces": {
+    "packages": [
+      "apps/*",
+      "packages/*"
+    ],
+    "catalog": {
+      "dotenv": "^17.2.2",
+      "zod": "^4.1.13",
+      "typescript": "^5",
+      "better-auth": "1.5.2"
+    }
+  },
+  "type": "module",
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "check-types": "turbo check-types",
+    "dev:native": "turbo -F native dev",
+    "dev:web": "turbo -F web dev",
+    "db:push": "turbo -F @klinik-AI/db db:push",
+    "db:studio": "turbo -F @klinik-AI/db db:studio",
+    "db:generate": "turbo -F @klinik-AI/db db:generate",
+    "db:migrate": "turbo -F @klinik-AI/db db:migrate",
+    "db:start": "turbo -F @klinik-AI/db db:start",
+    "db:watch": "turbo -F @klinik-AI/db db:watch",
+    "db:stop": "turbo -F @klinik-AI/db db:stop",
+    "db:down": "turbo -F @klinik-AI/db db:down"
+  },
+  "dependencies": {
+    "@klinik-AI/env": "workspace:*",
+    "dotenv": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@klinik-AI/config": "workspace:*",
+    "@types/node": "^22.13.14",
+    "turbo": "^2.8.12",
+    "typescript": "catalog:"
+  },
+  "packageManager": "bun@1.3.6"
+}

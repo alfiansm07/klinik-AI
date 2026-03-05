@@ -1,0 +1,24 @@
+{
+  "name": "@klinik-AI/auth",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "default": "./src/*.ts"
+    }
+  },
+  "scripts": {},
+  "dependencies": {
+    "@klinik-AI/db": "workspace:*",
+    "@klinik-AI/env": "workspace:*",
+    "better-auth": "catalog:",
+    "dotenv": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@klinik-AI/config": "workspace:*",
+    "typescript": "catalog:"
+  }
+}

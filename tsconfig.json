@@ -1,0 +1,3 @@
+{
+  "extends": "@klinik-AI/config/tsconfig.base.json"
+}
