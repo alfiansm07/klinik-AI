@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -15,7 +17,11 @@ import { authClient } from "@/lib/auth-client";
 import { Button } from "./ui/button";
 import { Skeleton } from "./ui/skeleton";
 
-export default function UserMenu() {
+type UserMenuProps = {
+  fallbackName?: string;
+};
+
+export default function UserMenu({ fallbackName }: UserMenuProps) {
   const router = useRouter();
   const { data: session, isPending } = authClient.useSession();
 
@@ -32,10 +38,10 @@ export default function UserMenu() {
   }
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger render={<Button variant="outline" />}>
-        {session.user.name}
-      </DropdownMenuTrigger>
+      <DropdownMenu>
+        <DropdownMenuTrigger render={<Button variant="outline" />}>
+        {session.user.name ?? fallbackName ?? "Account"}
+        </DropdownMenuTrigger>
       <DropdownMenuContent className="bg-card">
         <DropdownMenuGroup>
           <DropdownMenuLabel>My Account</DropdownMenuLabel>
