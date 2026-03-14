@@ -1,60 +1,76 @@
 # Lessons Learned — Klinikai
 
 <!-- Catat pola kesalahan dan cara menghindarinya di sini -->
-<!-- Format: ## YYYY-MM-DD lalu bullet points -->
+<!-- Format: kategori + bullet ringkas -->
 
+## UI Master Data
 
+- **Dialog, bukan Drawer/Sheet** untuk form add/edit. Halaman terpisah untuk upload/bulk.
+- **Klik row = navigasi ke detail** (`/master/{module}/{id}`), bukan buka dialog edit. Detail read-only dengan tombol Ubah (FormDialog), Hapus (AlertDialog), Lihat Semua.
+- **Pola detail**: Server `[id]/page.tsx` fetch → client `detail-view.tsx` (DetailTable + controlled dialog). Hapus → `router.push()`, edit → `router.refresh()`.
+- **Form di file terpisah** (`*-form.tsx`) — reusable di list (tambah) dan detail (edit).
+- **Kode auto-generated & immutable**: Gunakan `generateNextCode()` dari `lib/auto-code.ts`. Field `code` disabled di form. Pada update, jangan include `code` di `.set()`.
+- **Semua modul master data ikut pola standar** ini: DataTable + row click → detail + FormDialog + StatusBadge + auto-code.
+- **Gunakan shared primitives** dari `components/shared/master-data-ui.tsx`. Jangan build shell/footer manual per file.
 
-## 2026-03-08
-- **UI Pattern Master Data**: Jangan gunakan Drawer/Sheet untuk form add/edit di master data. Standarnya: Dialog (modal popup di tengah) untuk tambah, halaman terpisah untuk upload/bulk. Ini berlaku untuk SEMUA modul master data.
-- **Klik Row = Halaman Detail (BUKAN edit dialog)**: Klik row di tabel master data → navigasi ke `/master/{module}/{id}` halaman detail (read-only). Halaman detail menampilkan data dalam tabel label-value, dengan tombol "Ubah" (buka edit dialog), "Hapus" (konfirmasi AlertDialog), dan "Lihat Semua" (kembali ke list). JANGAN langsung buka dialog edit saat klik row.
-- **Pola Detail View**: Server page `[id]/page.tsx` fetch data + render `PageHeader` + client `detail-view.tsx`. Client component menggunakan `DetailTable` (read-only), controlled `AlertDialog` untuk hapus, controlled `FormDialog` untuk edit. Setelah hapus → `router.push()` ke list. Setelah edit → `router.refresh()`.
-- **Form di file terpisah**: Extract form component ke `*-form.tsx` (mis. `obat-form.tsx`) supaya bisa dipakai di list view (tambah) dan detail view (edit). Jangan duplikasi form.
-- **Kode/ID auto-generated**: Field `code` di master data (OBT001, TND001, dll) harus auto-generated oleh server, bukan input manual. Input `code` tetap ditampilkan tapi `disabled` dengan `className="bg-muted"`. Gunakan shared utility `generateNextCode()` di `lib/auto-code.ts`.
-- **Kode immutable setelah dibuat**: Pada update/edit, jangan izinkan perubahan `code` — hapus dari `.set()` di server action. Code hanya di-generate saat create.
-- **Jangan asumsi FK = enum**: Saat referensi app menunjukkan dropdown dengan nilai tetap (mis. Kategori Tindakan), jangan asumsi itu FK ke tabel dinamis. Bisa jadi fixed enum — konfirmasi dulu dengan user.
-- **Modul master data = standar**: Semua modul master data harus mengikuti pola: DataTable + klik row → halaman detail + FormDialog untuk tambah/edit + StatusBadge + auto-code. Form di-extract ke file terpisah (`*-form.tsx`). Pastikan konsistensi UI/UX lintas modul.
-- **AlertDialog base-ui (BUKAN radix)**: AlertDialog di project ini dari `@base-ui/react`, BUKAN radix. `AlertDialogTrigger` TIDAK mendukung `asChild`. Gunakan controlled pattern: state `open`/`onOpenChange`, Button `onClick` set state. Jangan pakai asChild.
-- **Sizing UI klinik**: Theme base-lyra shadcn default terlalu kecil untuk aplikasi klinik. Pastikan tombol, teks, dan spacing cukup besar untuk digunakan staf medis. Rujuk design system di `design-system/klinikai/MASTER.md`.
-- **Jangan mulai page baru dari size compact default**: Saat membangun halaman master data baru dari komponen low-level (`buttonVariants`, input, pagination custom), default `sm` atau ukuran browser-style hampir pasti terlalu kecil. Mulai dari `lg` untuk tombol pagination/aksi, `h-11+` untuk input/select, `text-base` untuk label/input penting, dan spacing yang longgar. Verifikasi visual control bar (search, filter, export, pagination) sebelum menganggap UI selesai.
-- **Master UI wajib lewat shared primitives**: Jangan lagi membuat shell list, section detail, atau footer action form master secara manual per file. Gunakan shared primitive di `apps/web/src/components/shared/master-data-ui.tsx` agar border, radius, spacing, dan ukuran tombol tetap konsisten. Jika ada halaman master baru yang butuh custom layout, tetap compose dari primitive ini — bukan mulai dari div/button manual.
+## UI Operasional (Worklist/HIS)
 
-## 2026-03-09
-- **Schema baru wajib diikuti migrate**: Setelah menambah tabel/enum baru di `packages/db/src/schema/`, jangan berhenti di typecheck/build. Jalankan `bun run db:migrate` supaya runtime route tidak gagal query karena tabel belum ada.
-- **Scope MVP outpatient harus dijaga**: Jika ARD/AGENTS menyebut MVP Phase 1 = outpatient, jangan expose opsi domain yang belum masuk scope seperti `rawat_inap` atau `ugd` hanya karena mudah ditambahkan. Simpan enum/UI tetap sempit sesuai fase produk.
-- **Subfitur kompleks yang ditunda jangan bocor ke v1**: Jika user bilang bagian seperti `Ruangan Akses` belum mau diimplementasikan, jangan diam-diam membawa field turunannya, validasi terkait, atau dependency tambahan. Potong tegas dari schema, form, dan detail view.
-- **Field optional harus bisa di-clear**: Jika sebuah select bersifat opsional, edit flow harus mendukung mengosongkan nilainya kembali. Jangan buat state nullable di code tapi UI tidak menyediakan opsi untuk reset.
-- **Drizzle generate bisa mentok di prompt enum lama**: Jika `drizzle-kit generate` masuk prompt interaktif yang ambigu dan tidak aman dijawab otomatis, gunakan custom migration SQL yang eksplisit untuk perubahan baru. Lebih baik migration manual yang jelas daripada schema dan DB out-of-sync.
+- **Review HIS = koreksi workflow**, bukan kosmetik. Prioritaskan pola kerja petugas.
+- **Klik row = seluruh row actionable** (bukan sebagian cell). Konfirmasi dulu: single click, double click, atau tombol eksplisit.
+- **Mulai dari pekerjaan inti petugas**: Halaman `pendaftaran/pasien` = worklist registrasi harian, bukan list master pasien.
+- **Ringkasan pasien** padat horizontal di row + popup preview satu klik, bukan bullet list panjang di cell.
+- **Placeholder filter** tampilkan label (`- Asuransi -`), bukan nilai internal (`all`).
+- **Placeholder visual boleh ada, tapi harus jujur read-only** — jangan bawa logika domain yang belum siap.
+- **CTA utama tunggal** di header. Jangan duplikasi kecuali empty state.
+- **Tabel padat butuh pemisah visual** (border/garis tipis antar-row dan antar-sel).
 
-## 2026-03-10
-- **Review user untuk layar operasional harus dibaca sebagai koreksi workflow, bukan kosmetik**: Jika user mengirim screenshot HIS dan mengatakan alur petugas harus seperti itu, prioritaskan pola kerja operasionalnya (klik row, filter default, popup ringkasan, dropdown aksi) daripada interpretasi UI yang lebih modern atau ringan.
-- **Klik row berarti seluruh row benar-benar actionable**: Jangan lagi menulis copy seperti "klik row" jika implementasi hanya membuat sebagian cell/link yang bisa diklik. Untuk tabel operasional, jika requirement-nya row click, seluruh area row harus membuka detail dengan satu klik dan tetap aksesibel keyboard.
-- **Placeholder filter di HIS-style form/list tidak boleh menampilkan nilai internal seperti `all`**: Nilai default select harus menampilkan label seperti screenshot (`- Asuransi -`, `- Status Pembayaran -`, dst.), bukan string state internal. Pisahkan dengan tegas antara nilai state dan label UI.
-- **Ringkasan pasien di worklist harus padat horizontal, bukan memanjang vertikal**: Jangan lagi menaruh bullet list panjang di dalam row tabel operasional. Jika detail pasien perlu tetap mudah dibaca, gunakan ringkasan singkat di row dan popup/preview satu klik pada nama pasien untuk detail singkat.
-- **Aksi tabel operasional harus selaras dengan design system, bukan warna ad-hoc**: Tombol CTA, split button, dan dropdown aksi harus mengikuti palet dan tone dari design system aplikasi. Hindari warna yang terasa tempelan atau terlalu berbeda dari base-lyra kecuali memang sudah diputuskan sebagai semantic action.
-- **Tabel operasional padat butuh pemisah visual yang jelas**: Untuk worklist gaya HIS, pastikan antar-row dan antar-sel punya garis/border tipis yang cukup terbaca agar petugas tidak bingung saat scanning data yang padat.
-- **Konfirmasi jumlah klik interaksi utama sebelum finalisasi**: Untuk worklist operasional, jangan asumsi detail dibuka dengan single click. Pastikan sejak awal apakah targetnya single click, double click, atau tombol eksplisit, lalu samakan perilaku dan copy bantuannya.
-- **Untuk layar operasional, mulai dari pekerjaan inti petugas dulu**: Halaman `pendaftaran/pasien` seharusnya pertama-tama diperlakukan sebagai worklist registrasi harian, bukan list master pasien yang diberi bumbu operasional. Jika user mengirim contoh HIS, bentuk halaman utama harus mengikuti meja kerja petugas.
-- **Placeholder visual boleh ditampilkan, tapi harus jujur sebagai read-only**: Kolom seperti pembayaran, BPJS, dan general consent boleh hadir dulu untuk meniru struktur HIS, tetapi implementasi harus tegas dibatasi ke placeholder/read-only agar tidak menipu scope atau membawa logika domain yang belum siap.
-- **Popup ringkasan pasien lebih baik daripada menumpuk detail di cell tabel**: Jika user ingin detail pasien tetap mudah diakses dari worklist, gunakan popup ringkasan pada nama/tombol detail pasien. Jangan mengorbankan keterbacaan tabel dengan isi cell yang terlalu tinggi.
-- **CTA utama pada halaman list harus tunggal**: Jika halaman sudah punya tombol utama `Tambah` atau `Daftar Baru` di header, jangan menambah CTA utama kedua di body kecuali itu konteks empty state. Duplikasi CTA cepat membuat worklist terasa membingungkan.
-- **Sebelum meniru layar HIS, cocokkan juga style dengan design system aplikasi**: Struktur dan kepadatan boleh meniru HIS lama, tetapi warna tombol, radius, ukuran kontrol, dan icon tetap harus mengikuti design system Klinikai/base-lyra. Meniru workflow tidak berarti menyalin gaya visual mentah-mentah.
-- **Detail route untuk modul operasional tetap mengikuti pola server page + detail view**: Untuk halaman detail read-only seperti pendaftaran, gunakan pattern yang sama dengan master data (`[id]/page.tsx` fetch + `detail-view.tsx`) agar konsisten dan mudah diperluas nanti.
-- **Kalau editor menemukan gap aksesibilitas pada row klik, ubah pola interaksi tanpa mengorbankan requirement user**: Jangan berhenti di solusi teknis yang aman tapi melenceng dari workflow user. Pilih pola yang tetap memenuhi accessibility sekaligus memenuhi cara kerja petugas yang diminta.
-- **Jika user bilang "selalu update lesson", lakukan segera setelah ada pelajaran baru**: Jangan tunggu akhir sesi atau menunggu diingatkan lagi. Setiap pola salah, koreksi workflow, atau keputusan teknis penting dari user harus langsung dicatat ke `tasks/lessons.md`.
-- **Agent result harus diverifikasi terhadap file nyata sebelum diteruskan**: Saat beberapa subagent bekerja paralel, jangan anggap semua hasil mereka konsisten satu sama lain. Baca file aktual setelah mereka selesai, lalu satukan hasil yang benar sebelum melanjutkan implementasi.
-- **Jika Oracle bilang fitur belum benar-benar end-to-end, jangan berhenti di UI**: Untuk flow operasional seperti pendaftaran, placeholder sukses tidak cukup. Jika submit belum persist ke DB atau worklist/detail masih baca preview statis, fitur belum selesai.
-- **Gunakan nama domain akhir sejak awal jika yakin itu domain yang benar**: Untuk pendaftaran rawat jalan, lebih baik langsung pakai tabel `visit` minimal daripada membuat tabel sementara yang nanti dibuang. Ini mengurangi rework dan menjaga kesinambungan ke antrean, pelayanan, dan billing.
-- **Validasi ownership tenant tidak boleh diserahkan ke foreign key saja**: Saat menerima `patientId`, `roomId`, `guarantorId`, atau `doctorId` dari client, selalu cek bahwa semua record itu milik `clinicId` aktif. FK hanya menjamin keberadaan, bukan isolasi tenant yang benar.
-- **Worklist dan detail page harus membaca sumber data yang sama dengan form submit**: Jika form menyimpan ke tabel nyata, halaman list/detail harus segera direwire ke query nyata yang sama. Jangan biarkan submit sukses tetapi halaman utama masih memakai preview constants.
-- **Untuk field pencarian utama, schema harus mengikuti workflow user, bukan sebaliknya**: Jika workflow petugas butuh cari berdasarkan `NIK/Nama`, tambahkan `nik` ke schema dan indexing dengan benar. Jangan memaksa user mencari lewat field lain hanya karena schema belum siap.
+## Label & Display
 
-## 2026-03-12
-- **Top-level modul sedikit lebih cocok di top nav daripada sidebar permanen**: Jika aplikasi hanya punya sedikit modul utama yang visible per role (mis. Dashboard, Pasien, Master Data), jangan pertahankan sidebar kiri hanya karena itu pola default dashboard. Top navigation memberi area kerja lebih lega dan terasa lebih clean tanpa mengorbankan orientasi.
-- **Master Data yang panjang di top nav jangan dipaksa jadi link horizontal**: Untuk menu seperti `Master Data` yang punya banyak anak, gunakan dropdown desktop dan accordion/sheet di mobile. Jangan meratakan semua submenu ke header karena cepat merusak scanability.
-- **Saat memindahkan sidebar ke header, cek breakpoint md/lg secara nyata**: Jika desktop nav muncul di `md` sementara metadata seperti nama klinik atau role baru muncul di `lg`, lakukan QA khusus di breakpoint transisi agar header tidak terasa janggal atau berat sebelah.
-- **Focus state nav baru harus eksplisit, jangan hanya menghapus outline**: Saat membuat trigger/link header baru, jangan meninggalkan `outline-none` tanpa replacement. Tambahkan `focus-visible` ring yang jelas supaya keyboard navigation tetap kuat.
-- **Accordion custom untuk mobile nav perlu state a11y yang eksplisit**: Jika memakai tombol expand/collapse sendiri untuk submenu mobile, ingat `aria-expanded` dan `aria-controls` sejak awal. Visual state saja tidak cukup untuk aksesibilitas.
+- **Enum, UUID, ID internal tidak boleh tampil di UI — di manapun.** Resolve ke nama/label manusia. Underscore atau UUID di UI = bug.
+- **Select relasional**: simpan ID sebagai value, tapi trigger selalu tampilkan label human-readable.
+- **Istilah teknis jangan bocor ke UI**: "handover" → "Serah Terima ke Dokter", "disposition" → "Keputusan Tindak Lanjut", dll. Cek referensi aplikasi industri.
+- **FK bukan enum**: Jangan asumsi dropdown = FK ke tabel dinamis. Bisa jadi fixed enum — konfirmasi dulu.
 
-## 2026-03-13
-- **Select relasional harus menampilkan label, bukan ID internal**: Untuk semua dropdown yang menyimpan foreign key atau identifier (`penjamin`, `poli`, `dokter`, dan sejenisnya), opsi boleh memakai `id` sebagai value/state submit, tetapi teks yang tampil setelah dipilih harus selalu label yang dilihat user. Jangan biarkan trigger menampilkan UUID, slug internal, atau kode state mentah.
+## Sizing & Design System
+
+- **Theme default terlalu kecil** untuk staf medis. Rujuk `design-system/klinikai/MASTER.md`.
+- **Mulai dari ukuran besar**: `lg` untuk tombol, `h-11+` untuk input, `text-base` untuk label. Jangan mulai dari `sm`.
+- **Aksi/tombol ikuti design system** base-lyra, bukan warna ad-hoc. Struktur boleh meniru HIS, gaya visual tetap Klinikai.
+
+## Komponen & Aksesibilitas
+
+- **AlertDialog dari `@base-ui/react`**, bukan radix. `AlertDialogTrigger` tidak support `asChild` — gunakan controlled pattern (`open`/`onOpenChange`).
+- **Focus state eksplisit**: Jangan `outline-none` tanpa replacement. Tambahkan `focus-visible` ring.
+- **Accordion mobile nav**: Tambahkan `aria-expanded` dan `aria-controls` sejak awal.
+- **Gap a11y pada row klik**: Pilih pola yang memenuhi accessibility + workflow petugas sekaligus.
+
+## Database & Schema
+
+- **Migration-first**: Gunakan `db:generate` + `db:migrate`. Hindari `db:push`.
+- **Schema baru wajib diikuti migrate** — jangan berhenti di typecheck/build.
+- **Migration file tanpa journal entry = hantu**: Pastikan setiap migration punya entry di `meta/_journal.json` + snapshot. Gunakan `drizzle-kit generate` yang otomatis buat keduanya.
+- **`drizzle-kit generate` butuh interaktif untuk enum baru**: Tidak bisa di-pipe di non-TTY. Workaround: jalankan manual di terminal user.
+- **Heredoc ke `docker exec` gagal di Windows/Git Bash**: Gunakan `docker cp` + `docker exec psql -f`. Tambahkan `MSYS_NO_PATHCONV=1`.
+- **Validasi ownership tenant di server**: Cek semua FK (`patientId`, `roomId`, dll) milik `clinicId` aktif. FK hanya jamin keberadaan, bukan isolasi tenant.
+- **Gunakan nama domain akhir sejak awal**: Langsung pakai tabel `visit`, bukan tabel sementara yang nanti dibuang.
+- **Field optional harus bisa di-clear** di UI edit flow.
+
+## Scope & Workflow
+
+- **Jaga scope MVP**: Jangan expose domain di luar fase (`rawat_inap`, `ugd` di Phase 1 outpatient).
+- **Subfitur yang ditunda jangan bocor**: Potong tegas dari schema, form, dan detail view.
+- **Submit harus end-to-end**: Placeholder sukses tidak cukup. Persist ke DB, worklist/detail baca data nyata.
+- **Worklist dan detail baca sumber data yang sama** dengan form submit — jangan preview constants.
+- **Schema ikuti workflow user**: Jika petugas butuh cari by NIK, tambahkan `nik` ke schema + index.
+
+## Navigasi
+
+- **Top nav untuk modul sedikit** — lebih lega daripada sidebar permanen.
+- **Master Data dropdown** di desktop, accordion/sheet di mobile. Jangan ratakan submenu ke header.
+- **Cek breakpoint transisi** (md/lg) agar header tidak janggal.
+
+## Proses Kerja Agent
+
+- **Verifikasi agent result terhadap file nyata** sebelum lanjut — jangan asumsi subagent konsisten.
+- **Update lessons segera** setelah ada pelajaran baru, jangan tunggu akhir sesi.
+- **Form wizard cek editability by role**: Pastikan perawat dapat mode edit, dokter read-only — verifikasi logic penentuan mode.

@@ -1,0 +1,111 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1772829737657,
+      "tag": "0000_chunky_colonel_america",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1772830527964,
+      "tag": "0001_cynical_trauma",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1772831178702,
+      "tag": "0002_easy_micromax",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1772959099359,
+      "tag": "0003_classy_lake",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1772959099360,
+      "tag": "0004_classy_lake_part2",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1772961262354,
+      "tag": "0005_replace_tariff_group_with_action_category",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1772986687270,
+      "tag": "0006_add_guarantor_master_fields",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1772989540632,
+      "tag": "0007_add_tariff_component_master",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1772990645246,
+      "tag": "0008_prune_non_scope_domains",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1772996919560,
+      "tag": "0009_make_tariff_component_fee_key_nullable",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1773062074380,
+      "tag": "0010_add_room_master",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1773072000000,
+      "tag": "0011_add_patient_registry",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1773158400000,
+      "tag": "0012_add_patient_nik",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1773312000000,
+      "tag": "0013_add_visit_registration",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1773504000000,
+      "tag": "0014_add_visit_assessment",
+      "breakpoints": true
+    }
+  ]
+}

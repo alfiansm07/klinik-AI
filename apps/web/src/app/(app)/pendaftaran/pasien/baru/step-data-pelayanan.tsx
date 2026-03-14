@@ -379,7 +379,7 @@ export function StepDataPelayanan({ patient }: StepDataPelayananProps) {
               Penjamin <span className="text-destructive">*</span>
             </Label>
             <Select
-              value={guarantorId || undefined}
+              value={guarantorId || null}
               onValueChange={(v) => setGuarantorId(v ?? "")}
             >
               <SelectTrigger
@@ -424,7 +424,7 @@ export function StepDataPelayanan({ patient }: StepDataPelayananProps) {
               Poli / Ruangan <span className="text-destructive">*</span>
             </Label>
             <Select
-              value={roomId || undefined}
+              value={roomId || null}
               onValueChange={(v) => setRoomId(v ?? "")}
             >
               <SelectTrigger
@@ -457,7 +457,7 @@ export function StepDataPelayanan({ patient }: StepDataPelayananProps) {
           <div className="space-y-2">
             <Label htmlFor="doctorId">Tenaga Medis</Label>
             <Select
-              value={doctorId || undefined}
+              value={doctorId || null}
               onValueChange={(v) => {
                 if (v === NO_DOCTOR_VALUE) {
                   setDoctorId("");
