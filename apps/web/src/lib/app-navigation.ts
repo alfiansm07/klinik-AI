@@ -66,6 +66,7 @@ export const MASTER_DATA_NAV: readonly MasterNavSection[] = [
         label: "Jenis Laboratorium",
         icon: "flask-conical",
       },
+      { href: "/master/pegawai", label: "Pegawai", icon: "users" },
       { href: "/master/ruangan", label: "Ruangan", icon: "door-open" },
       { href: "/master/guarantors", label: "Penjamin", icon: "shield" },
       {

@@ -106,6 +106,20 @@
       "when": 1773504000000,
       "tag": "0014_add_visit_assessment",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1773492273759,
+      "tag": "0015_add_employee_master",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1773493011584,
+      "tag": "0016_fix_employee_license_tenant_fk",
+      "breakpoints": true
     }
   ]
 }

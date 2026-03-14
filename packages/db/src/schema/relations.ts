@@ -10,6 +10,8 @@ import {
 } from "./assessment";
 import {
   actionTariff,
+  employee,
+  employeeLicense,
   guarantor,
   laboratoryType,
   manufacturer,
@@ -75,6 +77,8 @@ export const clinicRelations = relations(clinic, ({ many }) => ({
   visitVitalSigns: many(visitVitalSign),
   visitAssessmentExams: many(visitAssessmentExam),
   visitBodyFindings: many(visitBodyFinding),
+  employees: many(employee),
+  employeeLicenses: many(employeeLicense),
 }));
 
 export const patientRelations = relations(patient, ({ one, many }) => ({
@@ -352,5 +356,24 @@ export const roomRelations = relations(room, ({ one }) => ({
   clinic: one(clinic, {
     fields: [room.clinicId],
     references: [clinic.id],
+  }),
+}));
+
+export const employeeRelations = relations(employee, ({ one, many }) => ({
+  clinic: one(clinic, {
+    fields: [employee.clinicId],
+    references: [clinic.id],
+  }),
+  licenses: many(employeeLicense),
+}));
+
+export const employeeLicenseRelations = relations(employeeLicense, ({ one }) => ({
+  clinic: one(clinic, {
+    fields: [employeeLicense.clinicId],
+    references: [clinic.id],
+  }),
+  employee: one(employee, {
+    fields: [employeeLicense.clinicId, employeeLicense.employeeId],
+    references: [employee.clinicId, employee.id],
   }),
 }));

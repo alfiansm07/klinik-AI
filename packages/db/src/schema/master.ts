@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import {
   boolean,
   check,
+  foreignKey,
   index,
   integer,
   pgEnum,
@@ -65,6 +66,36 @@ export const roomInstallationEnum = pgEnum("room_installation", [
   "instalasi_farmasi",
   "instalasi_laboratorium",
   "instalasi_radiologi",
+]);
+
+export const employeeGenderEnum = pgEnum("employee_gender", [
+  "laki_laki",
+  "perempuan",
+]);
+
+export const employeeReligionEnum = pgEnum("employee_religion", [
+  "islam",
+  "kristen",
+  "katolik",
+  "hindu",
+  "buddha",
+  "konghucu",
+  "lainnya",
+]);
+
+export const employeeMaritalStatusEnum = pgEnum("employee_marital_status", [
+  "belum_kawin",
+  "kawin",
+  "cerai_hidup",
+  "cerai_mati",
+]);
+
+export const employeeLicenseTypeEnum = pgEnum("employee_license_type", [
+  "str",
+  "sip",
+  "sik",
+  "sipa",
+  "lainnya",
 ]);
 
 export const guarantor = pgTable(
@@ -509,6 +540,96 @@ export const room = pgTable(
     index("room_clinic_id_idx").on(table.clinicId),
     index("room_clinic_visit_type_idx").on(table.clinicId, table.visitType),
     index("room_clinic_installation_idx").on(table.clinicId, table.installation),
+  ],
+);
+
+export const employee = pgTable(
+  "employee",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    clinicId: text("clinic_id")
+      .notNull()
+      .references(() => clinic.id, { onDelete: "cascade" }),
+    code: text("code").notNull(),
+    nik: text("nik"),
+    nip: text("nip"),
+    fullName: text("full_name").notNull(),
+    titlePrefix: text("title_prefix"),
+    titleSuffix: text("title_suffix"),
+    gender: employeeGenderEnum("gender"),
+    birthPlace: text("birth_place"),
+    birthDate: timestamp("birth_date", { mode: "date" }),
+    religion: employeeReligionEnum("religion"),
+    maritalStatus: employeeMaritalStatusEnum("marital_status"),
+    address: text("address"),
+    email: text("email"),
+    phone: text("phone"),
+    position: text("position").notNull(),
+    workplaceName: text("workplace_name").notNull(),
+    parentInstitutionName: text("parent_institution_name"),
+    externalReference: text("external_reference"),
+    isActive: boolean("is_active").default(true).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex("employee_clinic_code_idx").on(table.clinicId, table.code),
+    uniqueIndex("employee_clinic_id_unique_idx").on(table.clinicId, table.id),
+    index("employee_clinic_id_idx").on(table.clinicId),
+    index("employee_clinic_active_idx").on(table.clinicId, table.isActive),
+    index("employee_clinic_position_idx").on(table.clinicId, table.position),
+    index("employee_clinic_name_idx").on(table.clinicId, table.fullName),
+    index("employee_clinic_nik_idx").on(table.clinicId, table.nik),
+    index("employee_clinic_nip_idx").on(table.clinicId, table.nip),
+  ],
+);
+
+export const employeeLicense = pgTable(
+  "employee_license",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    clinicId: text("clinic_id")
+      .notNull()
+      .references(() => clinic.id, { onDelete: "cascade" }),
+    employeeId: text("employee_id").notNull(),
+    licenseType: employeeLicenseTypeEnum("license_type").notNull(),
+    licenseNumber: text("license_number").notNull(),
+    issuedDate: timestamp("issued_date", { mode: "date" }),
+    validUntil: timestamp("valid_until", { mode: "date" }),
+    isLifetime: boolean("is_lifetime").default(false).notNull(),
+    notes: text("notes"),
+    sortOrder: smallint("sort_order").default(1).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("employee_license_clinic_id_idx").on(table.clinicId),
+    index("employee_license_clinic_type_idx").on(table.clinicId, table.licenseType),
+    index("employee_license_clinic_employee_sort_idx").on(
+      table.clinicId,
+      table.employeeId,
+      table.sortOrder,
+    ),
+    foreignKey({
+      columns: [table.clinicId, table.employeeId],
+      foreignColumns: [employee.clinicId, employee.id],
+      name: "employee_license_clinic_employee_fk",
+    }).onDelete("cascade"),
+    check("employee_license_sort_order_check", sql`${table.sortOrder} > 0`),
+    check(
+      "employee_license_lifetime_valid_until_check",
+      sql`(${table.isLifetime} = true and ${table.validUntil} is null) or (${table.isLifetime} = false and ${table.validUntil} is not null)`,
+    ),
   ],
 );
 
