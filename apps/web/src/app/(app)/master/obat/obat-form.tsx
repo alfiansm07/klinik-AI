@@ -30,6 +30,10 @@ import {
   type ObatFormData,
   type LookupOption,
 } from "./actions";
+import {
+  INVENTORY_METHOD_LABELS,
+  PRICING_METHOD_LABELS,
+} from "./obat-shared";
 
 export type ObatLookups = {
   categories: LookupOption[];
@@ -37,17 +41,6 @@ export type ObatLookups = {
   pharmacologies: LookupOption[];
   manufacturers: LookupOption[];
   suppliers: LookupOption[];
-};
-
-export const PRICING_METHOD_LABELS: Record<string, string> = {
-  hpp: "HPP",
-  markup: "Markup",
-};
-
-export const INVENTORY_METHOD_LABELS: Record<string, string> = {
-  fifo: "FIFO",
-  lifo: "LIFO",
-  average: "Rata-rata",
 };
 
 const NO_LOOKUP_VALUE = "__none__";

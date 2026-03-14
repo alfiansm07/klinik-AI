@@ -17,7 +17,6 @@ import {
 } from "@/components/ui/select";
 import {
   getRelationalSelectTriggerLabel,
-  getSelectedOptionLabel,
   hasUnavailableSelectedOption,
 } from "@/lib/select-utils";
 
@@ -29,7 +28,13 @@ import {
   type TindakanFormData,
   type LookupOption,
 } from "./actions";
-import { ACTION_CATEGORY_VALUES, ACTION_CATEGORY_LABELS, type ActionCategory } from "./constants";
+import {
+  ACTION_CATEGORY_VALUES,
+  ACTION_CATEGORY_LABELS,
+  EMPTY_ACTION_CATEGORY_LABEL,
+  formatActionCategoryLabel,
+  type ActionCategory,
+} from "./constants";
 
 // ─── Shared Constants & Utils ─────────────────────────────────
 
@@ -43,6 +48,7 @@ export const ACTION_TYPE_LABELS: Record<string, string> = {
 const ACTION_TYPE_VALUES = ["regular", "tindakan", "radiologi", "laboratorium"] as const;
 const NO_MEDICINE_VALUE = "__none__";
 const NO_MEDICINE_UNIT_VALUE = "__none_unit__";
+const NO_ACTION_CATEGORY_VALUE = "__none__";
 
 export function formatCurrency(value: number | null | undefined): string {
   if (value == null) return "Rp 0";
@@ -397,18 +403,26 @@ export function TindakanForm({
           <div className="space-y-2">
             <Label htmlFor="actionCategory">Kategori Tindakan</Label>
             <Select
-              value={actionCategory ?? undefined}
+              value={actionCategory ?? NO_ACTION_CATEGORY_VALUE}
               onValueChange={(value: string | null) =>
                 setActionCategory(
-                  !value || value === "__none__" ? null : (value as ActionCategory),
+                  !value || value === NO_ACTION_CATEGORY_VALUE
+                    ? null
+                    : (value as ActionCategory),
                 )
               }
             >
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Pilih kategori" />
+                <SelectValue>
+                  {actionCategory
+                    ? formatActionCategoryLabel(actionCategory)
+                    : EMPTY_ACTION_CATEGORY_LABEL}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="__none__">Tidak ada kategori</SelectItem>
+                <SelectItem value={NO_ACTION_CATEGORY_VALUE}>
+                  {EMPTY_ACTION_CATEGORY_LABEL}
+                </SelectItem>
                 {ACTION_CATEGORY_VALUES.map((val) => (
                   <SelectItem key={val} value={val}>
                     {ACTION_CATEGORY_LABELS[val]}
