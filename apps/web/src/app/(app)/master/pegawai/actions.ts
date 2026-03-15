@@ -11,9 +11,9 @@ import { generateNextCode } from "@/lib/auto-code";
 import {
   getPegawaiSchemaActionError,
   normalizeLicenseRows,
+  withPegawaiSchemaFallback,
   type PegawaiFormValues,
 } from "./pegawai-shared";
-import { PegawaiSchemaError } from "./pegawai-schema";
 import { assertPegawaiSchemaReady } from "./pegawai-schema.server";
 
 export type PegawaiRow = {
@@ -58,22 +58,6 @@ type ActionResult = {
   success: boolean;
   error?: string;
 };
-
-async function guardPegawaiAction<T>(
-  runner: () => Promise<T>,
-  fallback: T,
-): Promise<T> {
-  try {
-    await assertPegawaiSchemaReady();
-    return await runner();
-  } catch (error) {
-    if (error instanceof PegawaiSchemaError) {
-      return fallback;
-    }
-
-    throw error;
-  }
-}
 
 function trimOptional(value: string): string | null {
   const trimmed = value.trim();
@@ -158,86 +142,88 @@ function normalizePegawaiPayload(data: PegawaiFormValues) {
 }
 
 export async function getPegawaiList(): Promise<PegawaiRow[]> {
-  return guardPegawaiAction(async () => {
-    const context = await getPageAuthContext("master");
-    const membership = context.activeMembership;
-    if (!membership) return [];
+  await assertPegawaiSchemaReady();
 
-    return db
-      .select({
-        id: employee.id,
-        code: employee.code,
-        fullName: employee.fullName,
-        position: employee.position,
-        nik: employee.nik,
-        nip: employee.nip,
-        phone: employee.phone,
-        email: employee.email,
-        isActive: employee.isActive,
-      })
-      .from(employee)
-      .where(eq(employee.clinicId, membership.clinicId))
-      .orderBy(asc(employee.code));
-  }, []);
+  const context = await getPageAuthContext("master");
+  const membership = context.activeMembership;
+  if (!membership) return [];
+
+  return db
+    .select({
+      id: employee.id,
+      code: employee.code,
+      fullName: employee.fullName,
+      position: employee.position,
+      nik: employee.nik,
+      nip: employee.nip,
+      phone: employee.phone,
+      email: employee.email,
+      isActive: employee.isActive,
+    })
+    .from(employee)
+    .where(eq(employee.clinicId, membership.clinicId))
+    .orderBy(asc(employee.code));
 }
 
 export async function getPegawaiDetail(id: string): Promise<PegawaiDetail | null> {
-  return guardPegawaiAction(async () => {
-    const context = await getPageAuthContext("master");
-    const membership = context.activeMembership;
-    if (!membership) return null;
+  await assertPegawaiSchemaReady();
 
-    const detailRows = await db
-      .select({
-        id: employee.id,
-        code: employee.code,
-        fullName: employee.fullName,
-        position: employee.position,
-        nik: employee.nik,
-        nip: employee.nip,
-        phone: employee.phone,
-        email: employee.email,
-        isActive: employee.isActive,
-        titlePrefix: employee.titlePrefix,
-        titleSuffix: employee.titleSuffix,
-        gender: employee.gender,
-        birthPlace: employee.birthPlace,
-        birthDate: employee.birthDate,
-        religion: employee.religion,
-        maritalStatus: employee.maritalStatus,
-        address: employee.address,
-        workplaceName: employee.workplaceName,
-        parentInstitutionName: employee.parentInstitutionName,
-        externalReference: employee.externalReference,
-      })
-      .from(employee)
-      .where(and(eq(employee.id, id), eq(employee.clinicId, membership.clinicId)))
-      .limit(1);
+  const context = await getPageAuthContext("master");
+  const membership = context.activeMembership;
+  if (!membership) return null;
 
-    const detail = detailRows[0];
-    if (!detail) return null;
+  const detailRows = await db
+    .select({
+      id: employee.id,
+      code: employee.code,
+      fullName: employee.fullName,
+      position: employee.position,
+      nik: employee.nik,
+      nip: employee.nip,
+      phone: employee.phone,
+      email: employee.email,
+      isActive: employee.isActive,
+      titlePrefix: employee.titlePrefix,
+      titleSuffix: employee.titleSuffix,
+      gender: employee.gender,
+      birthPlace: employee.birthPlace,
+      birthDate: employee.birthDate,
+      religion: employee.religion,
+      maritalStatus: employee.maritalStatus,
+      address: employee.address,
+      workplaceName: employee.workplaceName,
+      parentInstitutionName: employee.parentInstitutionName,
+      externalReference: employee.externalReference,
+    })
+    .from(employee)
+    .where(and(eq(employee.id, id), eq(employee.clinicId, membership.clinicId)))
+    .limit(1);
 
-    const licenses = await db
-      .select({
-        id: employeeLicense.id,
-        licenseType: employeeLicense.licenseType,
-        licenseNumber: employeeLicense.licenseNumber,
-        issuedDate: employeeLicense.issuedDate,
-        validUntil: employeeLicense.validUntil,
-        isLifetime: employeeLicense.isLifetime,
-        notes: employeeLicense.notes,
-        sortOrder: employeeLicense.sortOrder,
-      })
-      .from(employeeLicense)
-      .where(and(eq(employeeLicense.employeeId, id), eq(employeeLicense.clinicId, membership.clinicId)))
-      .orderBy(asc(employeeLicense.sortOrder));
+  const detail = detailRows[0];
+  if (!detail) return null;
 
-    return { ...detail, licenses };
-  }, null);
+  const licenses = await db
+    .select({
+      id: employeeLicense.id,
+      licenseType: employeeLicense.licenseType,
+      licenseNumber: employeeLicense.licenseNumber,
+      issuedDate: employeeLicense.issuedDate,
+      validUntil: employeeLicense.validUntil,
+      isLifetime: employeeLicense.isLifetime,
+      notes: employeeLicense.notes,
+      sortOrder: employeeLicense.sortOrder,
+    })
+    .from(employeeLicense)
+    .where(and(eq(employeeLicense.employeeId, id), eq(employeeLicense.clinicId, membership.clinicId)))
+    .orderBy(asc(employeeLicense.sortOrder));
+
+  return { ...detail, licenses };
 }
 
 export async function getNextPegawaiCode(): Promise<string> {
-  return guardPegawaiAction(async () => {
+  return withPegawaiSchemaFallback(async () => {
+    await assertPegawaiSchemaReady();
+  }, async () => {
     const context = await getPageAuthContext("master");
     const membership = context.activeMembership;
     if (!membership) return "PGW001";
@@ -251,7 +237,9 @@ export async function getNextPegawaiCode(): Promise<string> {
 }
 
 export async function createPegawai(data: PegawaiFormValues): Promise<ActionResult> {
-  return guardPegawaiAction(async () => {
+  return withPegawaiSchemaFallback(async () => {
+    await assertPegawaiSchemaReady();
+  }, async () => {
     const context = await getPageAuthContext("master");
     const membership = context.activeMembership;
     if (!membership) return { success: false, error: "Tidak ada klinik aktif" };
@@ -312,7 +300,9 @@ export async function createPegawai(data: PegawaiFormValues): Promise<ActionResu
 }
 
 export async function updatePegawai(id: string, data: PegawaiFormValues): Promise<ActionResult> {
-  return guardPegawaiAction(async () => {
+  return withPegawaiSchemaFallback(async () => {
+    await assertPegawaiSchemaReady();
+  }, async () => {
     const context = await getPageAuthContext("master");
     const membership = context.activeMembership;
     if (!membership) return { success: false, error: "Tidak ada klinik aktif" };
@@ -391,7 +381,9 @@ export async function updatePegawai(id: string, data: PegawaiFormValues): Promis
 }
 
 export async function deletePegawai(id: string): Promise<ActionResult> {
-  return guardPegawaiAction(async () => {
+  return withPegawaiSchemaFallback(async () => {
+    await assertPegawaiSchemaReady();
+  }, async () => {
     const context = await getPageAuthContext("master");
     const membership = context.activeMembership;
     if (!membership) return { success: false, error: "Tidak ada klinik aktif" };

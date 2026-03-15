@@ -7,8 +7,12 @@ import {
   formatJabatanLabel,
   normalizeLicenseRows,
   validateLicenseLifetimeRule,
+  withPegawaiSchemaFallback,
 } from "./pegawai-shared";
-import { PEGAWAI_SCHEMA_ERROR_MESSAGE } from "./pegawai-schema";
+import {
+  PegawaiSchemaError,
+  PEGAWAI_SCHEMA_ERROR_MESSAGE,
+} from "./pegawai-schema";
 
 describe("pegawai shared helpers", () => {
   test("exposes canonical jabatan options and formats labels", () => {
@@ -87,5 +91,49 @@ describe("pegawai shared helpers", () => {
       getPegawaiSchemaActionError(),
       "Modul pegawai belum siap digunakan. Jalankan migrasi database terbaru terlebih dahulu.",
     );
+  });
+
+  test("returns fallback when schema is not ready for client actions", async () => {
+    const fallback = { success: false, error: getPegawaiSchemaActionError() };
+
+    const result = await withPegawaiSchemaFallback(
+      async () => {
+        throw new PegawaiSchemaError();
+      },
+      async () => {
+        return { success: true };
+      },
+      fallback,
+    );
+
+    assert.deepEqual(result, fallback);
+  });
+
+  test("rethrows schema errors when no fallback is provided", async () => {
+    await assert.rejects(
+      withPegawaiSchemaFallback(
+        async () => {},
+        async () => {
+          throw new PegawaiSchemaError();
+        },
+      ),
+      PegawaiSchemaError,
+    );
+  });
+
+  test("checks schema readiness before returning fallback", async () => {
+    let called = false;
+
+    const result = await withPegawaiSchemaFallback(
+      async () => {
+        called = true;
+        throw new PegawaiSchemaError();
+      },
+      async () => "PGW999",
+      "PGW001",
+    );
+
+    assert.equal(called, true);
+    assert.equal(result, "PGW001");
   });
 });
