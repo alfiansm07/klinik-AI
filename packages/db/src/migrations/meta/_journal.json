@@ -120,6 +120,13 @@
       "when": 1773493011584,
       "tag": "0016_fix_employee_license_tenant_fk",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1773550587208,
+      "tag": "0017_repair_legacy_employee_master",
+      "breakpoints": true
     }
   ]
 }

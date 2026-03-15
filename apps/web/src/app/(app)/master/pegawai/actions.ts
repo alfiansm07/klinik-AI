@@ -54,6 +54,7 @@ export type PegawaiDetail = PegawaiRow & {
 type ActionResult = {
   success: boolean;
   error?: string;
+  data?: PegawaiRow;
 };
 
 function trimOptional(value: string): string | null {
@@ -240,6 +241,8 @@ export async function createPegawai(data: PegawaiFormValues): Promise<ActionResu
       clinicIdColumn: employee.clinicId,
     });
 
+    let createdRow: PegawaiRow | undefined;
+
     await db.transaction(async (tx) => {
       const inserted = await tx
         .insert(employee)
@@ -255,6 +258,18 @@ export async function createPegawai(data: PegawaiFormValues): Promise<ActionResu
       if (!employeeId) {
         throw new Error("Gagal membuat data pegawai");
       }
+
+       createdRow = {
+         id: employeeId,
+         code,
+         fullName: normalized.values.fullName,
+         position: normalized.values.position,
+         nik: normalized.values.nik,
+         nip: normalized.values.nip,
+         phone: normalized.values.phone,
+         email: normalized.values.email,
+         isActive: normalized.values.isActive,
+       };
 
       if (normalized.values.licenses.length > 0) {
         await tx.insert(employeeLicense).values(
@@ -274,7 +289,7 @@ export async function createPegawai(data: PegawaiFormValues): Promise<ActionResu
     });
 
     revalidatePath("/master/pegawai");
-    return { success: true };
+    return { success: true, data: createdRow };
   } catch (error) {
     if (error instanceof Error && error.message.toLowerCase().includes("unique")) {
       return { success: false, error: "Kode pegawai sudah digunakan" };

@@ -23,6 +23,7 @@ import {
   createPegawai,
   updatePegawai,
   type PegawaiDetail,
+  type PegawaiRow,
 } from "./actions";
 import {
   JABATAN_OPTIONS,
@@ -32,8 +33,11 @@ import {
   PEGAWAI_RELIGION_OPTIONS,
 } from "./constants";
 import {
+  getSelectOptionLabel,
   getDefaultLicenseRow,
   getDefaultPegawaiFormValues,
+  getSelectNextValue,
+  getSelectValue,
   mapPegawaiDetailToFormValues,
   type PegawaiFormValues,
   type PegawaiLicenseFormValues,
@@ -42,7 +46,7 @@ import {
 type PegawaiFormProps = {
   editingDetail: PegawaiDetail | null;
   nextCode: string | null;
-  onSuccess: () => void;
+  onSuccess: (result: { createdRow?: PegawaiRow | null }) => void;
   onCancel: () => void;
 };
 
@@ -68,7 +72,7 @@ export function PegawaiForm({ editingDetail, nextCode, onSuccess, onCancel }: Pe
       }
 
       toast.success(isEditing ? "Pegawai berhasil diperbarui" : "Pegawai berhasil ditambahkan");
-      onSuccess();
+      onSuccess({ createdRow: result.data ?? null });
     },
   });
 
@@ -159,7 +163,14 @@ export function PegawaiForm({ editingDetail, nextCode, onSuccess, onCancel }: Pe
                   <>
               <div className="space-y-2 xl:col-span-1">
                 <Label>Jenis Izin</Label>
-                <Select value={license.licenseType || undefined} onValueChange={(value) => updateLicenseRow(index, { licenseType: value as PegawaiLicenseFormValues["licenseType"] })}>
+                <Select
+                  value={getSelectValue(license.licenseType)}
+                  onValueChange={(value) =>
+                    updateLicenseRow(index, {
+                      licenseType: getSelectNextValue(value) as PegawaiLicenseFormValues["licenseType"],
+                    })
+                  }
+                >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Pilih izin" />
                   </SelectTrigger>
@@ -300,27 +311,36 @@ function FieldTextarea({ form, name, label, className }: any) {
 function FieldSelect({ form, name, label, options, required, allowClear }: any) {
   return (
     <form.Field name={name}>
-      {(field: any) => (
-        <div className="space-y-2">
-          <Label htmlFor={field.name}>
-            {label}
-            {required ? <span className="text-destructive"> *</span> : null}
-          </Label>
-          <Select value={field.state.value || undefined} onValueChange={(value) => field.handleChange(value === "__empty__" ? "" : value)}>
-            <SelectTrigger id={field.name} className="w-full">
-              <SelectValue placeholder={`Pilih ${label.toLowerCase()}`} />
-            </SelectTrigger>
-            <SelectContent>
-              {allowClear ? <SelectItem value="__empty__">Kosongkan</SelectItem> : null}
-              {options.map((option: any) => (
-                <SelectItem key={option.value ?? option.key} value={option.value ?? option.key}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
+      {(field: any) => {
+        const selectedLabel = getSelectOptionLabel(options, field.state.value);
+
+        return (
+          <div className="space-y-2">
+            <Label htmlFor={field.name}>
+              {label}
+              {required ? <span className="text-destructive"> *</span> : null}
+            </Label>
+            <Select
+              value={getSelectValue(field.state.value)}
+              onValueChange={(value) => field.handleChange(getSelectNextValue(value))}
+            >
+              <SelectTrigger id={field.name} className="w-full">
+                <SelectValue placeholder={`Pilih ${label.toLowerCase()}`}>
+                  {selectedLabel ?? `Pilih ${label.toLowerCase()}`}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {allowClear ? <SelectItem value="__empty__">Kosongkan</SelectItem> : null}
+                {options.map((option: any) => (
+                  <SelectItem key={option.value ?? option.key} value={option.value ?? option.key}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        );
+      }}
     </form.Field>
   );
 }
