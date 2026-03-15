@@ -20,7 +20,7 @@ export default async function TindakanDetailPage({ params }: Props) {
   if (!detail) notFound();
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto w-full max-w-5xl space-y-6">
       <PageHeader
         title={`Data Tindakan (${detail.name})`}
         description="Tinjau detail tindakan medis, tarif, dan obat terkait dalam satu tampilan."

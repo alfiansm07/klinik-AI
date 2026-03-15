@@ -179,7 +179,7 @@ export function PegawaiDetailView({ detail }: PegawaiDetailViewProps) {
         onOpenChange={setEditDialogOpen}
         title="Ubah Pegawai"
         description="Perbarui data pegawai dan perizinannya."
-        className="sm:max-w-6xl"
+        className="sm:max-w-4xl"
       >
         <PegawaiForm
           editingDetail={detail}

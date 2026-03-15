@@ -22,7 +22,7 @@ export default async function PegawaiDetailPage({ params }: PegawaiDetailPagePro
     }
 
     return (
-      <div className="space-y-6">
+      <div className="mx-auto w-full max-w-5xl space-y-6">
         <PageHeader
           title={detail.fullName}
           description="Detail pegawai, penempatan, dan perizinan praktik."
@@ -34,7 +34,7 @@ export default async function PegawaiDetailPage({ params }: PegawaiDetailPagePro
   } catch (error) {
     if (error instanceof PegawaiSchemaError) {
       return (
-        <div className="space-y-6">
+        <div className="mx-auto w-full max-w-5xl space-y-6">
           <PageHeader
             title="Pegawai"
             description="Detail pegawai, penempatan, dan perizinan praktik."

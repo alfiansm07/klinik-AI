@@ -20,7 +20,7 @@ export default async function ObatDetailPage({ params }: Props) {
   if (!detail) notFound();
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto w-full max-w-5xl space-y-6">
       <PageHeader
         title={`Data Obat (${detail.name})`}
         description="Tinjau detail obat atau alat kesehatan beserta informasi satuan dan integrasinya."
