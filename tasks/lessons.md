@@ -74,3 +74,14 @@
 - **Verifikasi agent result terhadap file nyata** sebelum lanjut — jangan asumsi subagent konsisten.
 - **Update lessons segera** setelah ada pelajaran baru, jangan tunggu akhir sesi.
 - **Form wizard cek editability by role**: Pastikan perawat dapat mode edit, dokter read-only — verifikasi logic penentuan mode.
+
+## Git & Branch Workflow
+
+- **Jangan kerja langsung di `master`**. Selalu mulai dari `master` terbaru lalu buat branch fitur baru.
+- **Satu branch = satu tujuan jelas**. Hindari branch campuran yang berisi beberapa fitur tidak terkait.
+- **Gunakan PR sebagai jalur merge default**. Jangan andalkan commit lokal di `master` sebagai sumber kebenaran.
+- **Kalau fitur bertumpuk, pakai stacked PR**: branch anak boleh base ke branch induk, tapi setelah induk merge, retarget atau buat ulang PR anak ke `master`.
+- **Setelah merge, langsung cleanup**: update `master`, hapus branch merged, hapus worktree terkait, lalu `git worktree prune`.
+- **Worktree harus disposable**: `.env` lokal boleh disalin ke worktree untuk build lokal, tapi jangan di-commit.
+- **Migration yang sudah diterapkan tidak boleh diubah diam-diam**: buat migration korektif baru agar history DB tetap jujur.
+- **Artefak Windows seperti file `nul` harus di-ignore** agar workspace tetap bersih dan tidak mengganggu commit.
