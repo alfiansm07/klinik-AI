@@ -17,7 +17,7 @@ export default async function RuanganDetailPage({ params }: Props) {
   if (!detail) notFound();
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto w-full max-w-5xl space-y-6">
       <PageHeader
         title={`Data Ruangan (${detail.name})`}
         description="Tinjau detail ruangan, konfigurasi panggil, dan status penggunaannya."

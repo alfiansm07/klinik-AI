@@ -19,7 +19,7 @@ export default async function TariffComponentDetailPage({ params }: Props) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto w-full max-w-5xl space-y-6">
       <PageHeader
         title={`Komponen Tarif (${detail.name})`}
         description="Tinjau detail komponen tarif dan perbarui bila diperlukan."

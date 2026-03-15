@@ -124,7 +124,7 @@ export function PegawaiView({ data }: PegawaiViewProps) {
         }}
         title="Tambah Pegawai"
         description="Lengkapi identitas, penempatan, dan izin praktik pegawai klinik."
-        className="sm:max-w-6xl"
+        className="sm:max-w-4xl"
       >
         {isLoadingCode ? (
           <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">

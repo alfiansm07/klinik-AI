@@ -17,7 +17,7 @@ export default async function LaboratDetailPage({ params }: Props) {
   if (!detail) notFound();
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto w-full max-w-5xl space-y-6">
       <PageHeader
         title={`Data Jenis Laboratorium (${detail.name})`}
         description="Tinjau detail jenis pemeriksaan laboratorium dan status penggunaannya."
