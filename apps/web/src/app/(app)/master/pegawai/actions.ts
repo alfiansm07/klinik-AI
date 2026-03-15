@@ -9,9 +9,12 @@ import { getPageAuthContext } from "@/lib/auth-helpers";
 import { generateNextCode } from "@/lib/auto-code";
 
 import {
+  getPegawaiSchemaActionError,
   normalizeLicenseRows,
+  withPegawaiSchemaFallback,
   type PegawaiFormValues,
 } from "./pegawai-shared";
+import { assertPegawaiSchemaReady } from "./pegawai-schema.server";
 
 export type PegawaiRow = {
   id: string;
@@ -139,6 +142,8 @@ function normalizePegawaiPayload(data: PegawaiFormValues) {
 }
 
 export async function getPegawaiList(): Promise<PegawaiRow[]> {
+  await assertPegawaiSchemaReady();
+
   const context = await getPageAuthContext("master");
   const membership = context.activeMembership;
   if (!membership) return [];
@@ -161,6 +166,8 @@ export async function getPegawaiList(): Promise<PegawaiRow[]> {
 }
 
 export async function getPegawaiDetail(id: string): Promise<PegawaiDetail | null> {
+  await assertPegawaiSchemaReady();
+
   const context = await getPageAuthContext("master");
   const membership = context.activeMembership;
   if (!membership) return null;
@@ -214,166 +221,182 @@ export async function getPegawaiDetail(id: string): Promise<PegawaiDetail | null
 }
 
 export async function getNextPegawaiCode(): Promise<string> {
-  const context = await getPageAuthContext("master");
-  const membership = context.activeMembership;
-  if (!membership) return "PGW001";
+  return withPegawaiSchemaFallback(async () => {
+    await assertPegawaiSchemaReady();
+  }, async () => {
+    const context = await getPageAuthContext("master");
+    const membership = context.activeMembership;
+    if (!membership) return "PGW001";
 
-  return generateNextCode(membership.clinicId, "PGW", {
-    table: employee,
-    codeColumn: employee.code,
-    clinicIdColumn: employee.clinicId,
-  });
-}
-
-export async function createPegawai(data: PegawaiFormValues): Promise<ActionResult> {
-  const context = await getPageAuthContext("master");
-  const membership = context.activeMembership;
-  if (!membership) return { success: false, error: "Tidak ada klinik aktif" };
-
-  const normalized = normalizePegawaiPayload(data);
-  if ("error" in normalized) return { success: false, error: normalized.error };
-
-  try {
-    const code = await generateNextCode(membership.clinicId, "PGW", {
+    return generateNextCode(membership.clinicId, "PGW", {
       table: employee,
       codeColumn: employee.code,
       clinicIdColumn: employee.clinicId,
     });
+  }, "PGW001");
+}
 
-    await db.transaction(async (tx) => {
-      const inserted = await tx
-        .insert(employee)
-        .values({
-          clinicId: membership.clinicId,
-          code,
-          ...normalized.values,
-          licenses: undefined,
-        } as never)
-        .returning({ id: employee.id });
+export async function createPegawai(data: PegawaiFormValues): Promise<ActionResult> {
+  return withPegawaiSchemaFallback(async () => {
+    await assertPegawaiSchemaReady();
+  }, async () => {
+    const context = await getPageAuthContext("master");
+    const membership = context.activeMembership;
+    if (!membership) return { success: false, error: "Tidak ada klinik aktif" };
 
-      const employeeId = inserted[0]?.id;
-      if (!employeeId) {
-        throw new Error("Gagal membuat data pegawai");
-      }
+    const normalized = normalizePegawaiPayload(data);
+    if ("error" in normalized) return { success: false, error: normalized.error };
 
-      if (normalized.values.licenses.length > 0) {
-        await tx.insert(employeeLicense).values(
-          normalized.values.licenses.map((license, index) => ({
+    try {
+      const code = await generateNextCode(membership.clinicId, "PGW", {
+        table: employee,
+        codeColumn: employee.code,
+        clinicIdColumn: employee.clinicId,
+      });
+
+      await db.transaction(async (tx) => {
+        const inserted = await tx
+          .insert(employee)
+          .values({
             clinicId: membership.clinicId,
-            employeeId,
-            licenseType: license.licenseType as never,
-            licenseNumber: license.licenseNumber,
-            issuedDate: license.issuedDate,
-            validUntil: license.validUntil,
-            isLifetime: license.isLifetime,
-            notes: license.notes,
-            sortOrder: index + 1,
-          })),
-        );
+            code,
+            ...normalized.values,
+            licenses: undefined,
+          } as never)
+          .returning({ id: employee.id });
+
+        const employeeId = inserted[0]?.id;
+        if (!employeeId) {
+          throw new Error("Gagal membuat data pegawai");
+        }
+
+        if (normalized.values.licenses.length > 0) {
+          await tx.insert(employeeLicense).values(
+            normalized.values.licenses.map((license, index) => ({
+              clinicId: membership.clinicId,
+              employeeId,
+              licenseType: license.licenseType as never,
+              licenseNumber: license.licenseNumber,
+              issuedDate: license.issuedDate,
+              validUntil: license.validUntil,
+              isLifetime: license.isLifetime,
+              notes: license.notes,
+              sortOrder: index + 1,
+            })),
+          );
+        }
+      });
+
+      revalidatePath("/master/pegawai");
+      return { success: true };
+    } catch (error) {
+      if (error instanceof Error && error.message.toLowerCase().includes("unique")) {
+        return { success: false, error: "Kode pegawai sudah digunakan" };
       }
-    });
 
-    revalidatePath("/master/pegawai");
-    return { success: true };
-  } catch (error) {
-    if (error instanceof Error && error.message.toLowerCase().includes("unique")) {
-      return { success: false, error: "Kode pegawai sudah digunakan" };
+      return { success: false, error: "Gagal menambahkan pegawai" };
     }
-
-    return { success: false, error: "Gagal menambahkan pegawai" };
-  }
+  }, { success: false, error: getPegawaiSchemaActionError() });
 }
 
 export async function updatePegawai(id: string, data: PegawaiFormValues): Promise<ActionResult> {
-  const context = await getPageAuthContext("master");
-  const membership = context.activeMembership;
-  if (!membership) return { success: false, error: "Tidak ada klinik aktif" };
+  return withPegawaiSchemaFallback(async () => {
+    await assertPegawaiSchemaReady();
+  }, async () => {
+    const context = await getPageAuthContext("master");
+    const membership = context.activeMembership;
+    if (!membership) return { success: false, error: "Tidak ada klinik aktif" };
 
-  const normalized = normalizePegawaiPayload(data);
-  if ("error" in normalized) return { success: false, error: normalized.error };
+    const normalized = normalizePegawaiPayload(data);
+    if ("error" in normalized) return { success: false, error: normalized.error };
 
-  try {
-    await db.transaction(async (tx) => {
-      const existing = await tx
-        .select({ id: employee.id })
-        .from(employee)
-        .where(and(eq(employee.id, id), eq(employee.clinicId, membership.clinicId)))
-        .limit(1);
+    try {
+      await db.transaction(async (tx) => {
+        const existing = await tx
+          .select({ id: employee.id })
+          .from(employee)
+          .where(and(eq(employee.id, id), eq(employee.clinicId, membership.clinicId)))
+          .limit(1);
 
-      if (!existing[0]) {
-        throw new Error("Data pegawai tidak ditemukan");
+        if (!existing[0]) {
+          throw new Error("Data pegawai tidak ditemukan");
+        }
+
+        await tx
+          .update(employee)
+          .set({
+            fullName: normalized.values.fullName,
+            titlePrefix: normalized.values.titlePrefix,
+            titleSuffix: normalized.values.titleSuffix,
+            nik: normalized.values.nik,
+            nip: normalized.values.nip,
+            gender: normalized.values.gender as never,
+            birthPlace: normalized.values.birthPlace,
+            birthDate: normalized.values.birthDate,
+            religion: normalized.values.religion as never,
+            maritalStatus: normalized.values.maritalStatus as never,
+            address: normalized.values.address,
+            email: normalized.values.email,
+            phone: normalized.values.phone,
+            position: normalized.values.position,
+            workplaceName: normalized.values.workplaceName,
+            parentInstitutionName: normalized.values.parentInstitutionName,
+            externalReference: normalized.values.externalReference,
+            isActive: normalized.values.isActive,
+          })
+          .where(and(eq(employee.id, id), eq(employee.clinicId, membership.clinicId)));
+
+        await tx
+          .delete(employeeLicense)
+          .where(and(eq(employeeLicense.employeeId, id), eq(employeeLicense.clinicId, membership.clinicId)));
+
+        if (normalized.values.licenses.length > 0) {
+          await tx.insert(employeeLicense).values(
+            normalized.values.licenses.map((license, index) => ({
+              clinicId: membership.clinicId,
+              employeeId: id,
+              licenseType: license.licenseType as never,
+              licenseNumber: license.licenseNumber,
+              issuedDate: license.issuedDate,
+              validUntil: license.validUntil,
+              isLifetime: license.isLifetime,
+              notes: license.notes,
+              sortOrder: index + 1,
+            })),
+          );
+        }
+      });
+
+      revalidatePath("/master/pegawai");
+      revalidatePath(`/master/pegawai/${id}`);
+      return { success: true };
+    } catch (error) {
+      if (error instanceof Error && error.message === "Data pegawai tidak ditemukan") {
+        return { success: false, error: error.message };
       }
 
-      await tx
-        .update(employee)
-        .set({
-          fullName: normalized.values.fullName,
-          titlePrefix: normalized.values.titlePrefix,
-          titleSuffix: normalized.values.titleSuffix,
-          nik: normalized.values.nik,
-          nip: normalized.values.nip,
-          gender: normalized.values.gender as never,
-          birthPlace: normalized.values.birthPlace,
-          birthDate: normalized.values.birthDate,
-          religion: normalized.values.religion as never,
-          maritalStatus: normalized.values.maritalStatus as never,
-          address: normalized.values.address,
-          email: normalized.values.email,
-          phone: normalized.values.phone,
-          position: normalized.values.position,
-          workplaceName: normalized.values.workplaceName,
-          parentInstitutionName: normalized.values.parentInstitutionName,
-          externalReference: normalized.values.externalReference,
-          isActive: normalized.values.isActive,
-        })
-        .where(and(eq(employee.id, id), eq(employee.clinicId, membership.clinicId)));
-
-      await tx
-        .delete(employeeLicense)
-        .where(and(eq(employeeLicense.employeeId, id), eq(employeeLicense.clinicId, membership.clinicId)));
-
-      if (normalized.values.licenses.length > 0) {
-        await tx.insert(employeeLicense).values(
-          normalized.values.licenses.map((license, index) => ({
-            clinicId: membership.clinicId,
-            employeeId: id,
-            licenseType: license.licenseType as never,
-            licenseNumber: license.licenseNumber,
-            issuedDate: license.issuedDate,
-            validUntil: license.validUntil,
-            isLifetime: license.isLifetime,
-            notes: license.notes,
-            sortOrder: index + 1,
-          })),
-        );
-      }
-    });
-
-    revalidatePath("/master/pegawai");
-    revalidatePath(`/master/pegawai/${id}`);
-    return { success: true };
-  } catch (error) {
-    if (error instanceof Error && error.message === "Data pegawai tidak ditemukan") {
-      return { success: false, error: error.message };
+      return { success: false, error: "Gagal memperbarui pegawai" };
     }
-
-    return { success: false, error: "Gagal memperbarui pegawai" };
-  }
+  }, { success: false, error: getPegawaiSchemaActionError() });
 }
 
 export async function deletePegawai(id: string): Promise<ActionResult> {
-  const context = await getPageAuthContext("master");
-  const membership = context.activeMembership;
-  if (!membership) return { success: false, error: "Tidak ada klinik aktif" };
+  return withPegawaiSchemaFallback(async () => {
+    await assertPegawaiSchemaReady();
+  }, async () => {
+    const context = await getPageAuthContext("master");
+    const membership = context.activeMembership;
+    if (!membership) return { success: false, error: "Tidak ada klinik aktif" };
 
-  try {
-    await db
-      .delete(employee)
-      .where(and(eq(employee.id, id), eq(employee.clinicId, membership.clinicId)));
+    try {
+      await db
+        .delete(employee)
+        .where(and(eq(employee.id, id), eq(employee.clinicId, membership.clinicId)));
 
-    revalidatePath("/master/pegawai");
-    return { success: true };
-  } catch {
-    return { success: false, error: "Gagal menghapus pegawai" };
-  }
+      revalidatePath("/master/pegawai");
+      return { success: true };
+    } catch {
+      return { success: false, error: "Gagal menghapus pegawai" };
+    }
+  }, { success: false, error: getPegawaiSchemaActionError() });
 }

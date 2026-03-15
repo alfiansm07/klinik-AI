@@ -12,8 +12,33 @@ import {
   type PegawaiMaritalStatus,
   type PegawaiReligion,
 } from "./constants";
+import {
+  PegawaiSchemaError,
+  PEGAWAI_SCHEMA_ACTION_ERROR_MESSAGE,
+} from "./pegawai-schema";
 
 export { JABATAN_OPTIONS };
+
+export function getPegawaiSchemaActionError() {
+  return PEGAWAI_SCHEMA_ACTION_ERROR_MESSAGE;
+}
+
+export async function withPegawaiSchemaFallback<T>(
+  assertReady: () => Promise<void>,
+  runner: () => Promise<T>,
+  fallback?: T,
+): Promise<T> {
+  try {
+    await assertReady();
+    return await runner();
+  } catch (error) {
+    if (error instanceof PegawaiSchemaError && fallback !== undefined) {
+      return fallback;
+    }
+
+    throw error;
+  }
+}
 
 export type PegawaiLicenseInput = {
   id?: string | null;
