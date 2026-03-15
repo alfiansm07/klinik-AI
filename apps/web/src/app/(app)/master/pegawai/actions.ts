@@ -12,6 +12,7 @@ import {
   normalizeLicenseRows,
   type PegawaiFormValues,
 } from "./pegawai-shared";
+import { assertPegawaiSchemaReady } from "./pegawai-schema.server";
 
 export type PegawaiRow = {
   id: string;
@@ -139,6 +140,8 @@ function normalizePegawaiPayload(data: PegawaiFormValues) {
 }
 
 export async function getPegawaiList(): Promise<PegawaiRow[]> {
+  await assertPegawaiSchemaReady();
+
   const context = await getPageAuthContext("master");
   const membership = context.activeMembership;
   if (!membership) return [];
@@ -161,6 +164,8 @@ export async function getPegawaiList(): Promise<PegawaiRow[]> {
 }
 
 export async function getPegawaiDetail(id: string): Promise<PegawaiDetail | null> {
+  await assertPegawaiSchemaReady();
+
   const context = await getPageAuthContext("master");
   const membership = context.activeMembership;
   if (!membership) return null;
@@ -214,6 +219,8 @@ export async function getPegawaiDetail(id: string): Promise<PegawaiDetail | null
 }
 
 export async function getNextPegawaiCode(): Promise<string> {
+  await assertPegawaiSchemaReady();
+
   const context = await getPageAuthContext("master");
   const membership = context.activeMembership;
   if (!membership) return "PGW001";
@@ -226,6 +233,8 @@ export async function getNextPegawaiCode(): Promise<string> {
 }
 
 export async function createPegawai(data: PegawaiFormValues): Promise<ActionResult> {
+  await assertPegawaiSchemaReady();
+
   const context = await getPageAuthContext("master");
   const membership = context.activeMembership;
   if (!membership) return { success: false, error: "Tidak ada klinik aktif" };
@@ -285,6 +294,8 @@ export async function createPegawai(data: PegawaiFormValues): Promise<ActionResu
 }
 
 export async function updatePegawai(id: string, data: PegawaiFormValues): Promise<ActionResult> {
+  await assertPegawaiSchemaReady();
+
   const context = await getPageAuthContext("master");
   const membership = context.activeMembership;
   if (!membership) return { success: false, error: "Tidak ada klinik aktif" };
@@ -362,6 +373,8 @@ export async function updatePegawai(id: string, data: PegawaiFormValues): Promis
 }
 
 export async function deletePegawai(id: string): Promise<ActionResult> {
+  await assertPegawaiSchemaReady();
+
   const context = await getPageAuthContext("master");
   const membership = context.activeMembership;
   if (!membership) return { success: false, error: "Tidak ada klinik aktif" };

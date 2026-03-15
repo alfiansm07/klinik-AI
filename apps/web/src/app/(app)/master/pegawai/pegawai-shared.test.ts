@@ -7,6 +7,7 @@ import {
   normalizeLicenseRows,
   validateLicenseLifetimeRule,
 } from "./pegawai-shared";
+import { PEGAWAI_SCHEMA_ERROR_MESSAGE } from "./pegawai-schema";
 
 describe("pegawai shared helpers", () => {
   test("exposes canonical jabatan options and formats labels", () => {
@@ -74,5 +75,9 @@ describe("pegawai shared helpers", () => {
       }),
       true,
     );
+  });
+
+  test("exposes a clear schema mismatch message", () => {
+    assert.match(PEGAWAI_SCHEMA_ERROR_MESSAGE, /migrasi database terbaru/i);
   });
 });

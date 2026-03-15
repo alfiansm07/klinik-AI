@@ -1,13 +1,12 @@
 import "server-only";
 
-import { auth } from "@klinik-AI/auth";
 import { db } from "@klinik-AI/db";
 import { clinic, clinicMember } from "@klinik-AI/db/schema/tenant";
 import { and, asc, eq } from "drizzle-orm";
-import { headers } from "next/headers";
 import { cache } from "react";
 import { redirect } from "next/navigation";
 
+import { getSafeSession } from "./auth-session.server";
 import { canAccessModule, hasAnyRole, type AppModule, type AppRole } from "./rbac";
 import { pickActiveMembership } from "./tenant-context";
 
@@ -15,7 +14,7 @@ export class UnauthorizedError extends Error {}
 
 export class ForbiddenError extends Error {}
 
-type Session = NonNullable<Awaited<ReturnType<typeof auth.api.getSession>>>;
+type Session = NonNullable<Awaited<ReturnType<typeof getSafeSession>>>;
 
 export type AuthContext = {
   session: Session;
@@ -28,7 +27,7 @@ export type AuthContext = {
 };
 
 export const getAuthContext = cache(async (): Promise<AuthContext | null> => {
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await getSafeSession();
 
   if (!session?.user) {
     return null;
