@@ -1,5 +1,6 @@
 "use client";
 
+import type { Route } from "next";
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -70,7 +71,7 @@ export function PegawaiDetailView({ detail }: PegawaiDetailViewProps) {
   return (
     <>
       <div className="flex justify-end">
-        <Link href="/master/pegawai">
+        <Link href={"/master/pegawai" as Route}>
           <Button variant="outline" className={MASTER_ACTION_BUTTON_CLASSNAME}>Lihat Semua</Button>
         </Link>
       </div>
@@ -162,7 +163,7 @@ export function PegawaiDetailView({ detail }: PegawaiDetailViewProps) {
                   }
 
                   toast.success("Pegawai berhasil dihapus");
-                  router.push("/master/pegawai");
+                  router.push("/master/pegawai" as Route);
                 });
               }}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"

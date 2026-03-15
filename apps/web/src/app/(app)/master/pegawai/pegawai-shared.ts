@@ -120,6 +120,18 @@ export function formatPegawaiLicenseTypeLabel(value: string | null | undefined):
   return PEGAWAI_LICENSE_TYPE_LABELS[value as PegawaiLicenseType] ?? "-";
 }
 
+export function getSelectOptionLabel(
+  options: ReadonlyArray<{ value?: string; key?: string; label: string }>,
+  value: string | null | undefined,
+): string | null {
+  if (!value) {
+    return null;
+  }
+
+  const option = options.find((candidate) => (candidate.value ?? candidate.key) === value);
+  return option?.label ?? null;
+}
+
 export function getDefaultLicenseRow(): PegawaiLicenseFormValues {
   return {
     licenseType: "",
@@ -129,6 +141,18 @@ export function getDefaultLicenseRow(): PegawaiLicenseFormValues {
     isLifetime: false,
     notes: "",
   };
+}
+
+export function getSelectValue(value: string | null | undefined): string {
+  return value ?? "";
+}
+
+export function getSelectNextValue(value: string | null | undefined): string {
+  if (!value || value === "__empty__") {
+    return "";
+  }
+
+  return value;
 }
 
 export function getDefaultPegawaiFormValues(): PegawaiFormValues {

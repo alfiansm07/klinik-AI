@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { type ColumnDef } from "@tanstack/react-table";
 import { Plus, Users } from "lucide-react";
@@ -59,8 +60,13 @@ type PegawaiViewProps = {
 export function PegawaiView({ data }: PegawaiViewProps) {
   const router = useRouter();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [rows, setRows] = useState(data);
   const [nextCode, setNextCode] = useState<string | null>(null);
   const [isLoadingCode, setIsLoadingCode] = useState(false);
+
+  useEffect(() => {
+    setRows(data);
+  }, [data]);
 
   async function handleAdd() {
     setDialogOpen(true);
@@ -78,7 +84,7 @@ export function PegawaiView({ data }: PegawaiViewProps) {
     <>
       <DataTable
         columns={createColumns()}
-        data={data}
+        data={rows}
         searchableColumns={["code", "fullName", "nik", "nip", "phone"]}
         searchPlaceholder="Cari nama, kode, NIK, NIP, atau telepon..."
         showStatusFilter
@@ -98,7 +104,7 @@ export function PegawaiView({ data }: PegawaiViewProps) {
             Tambah Pegawai
           </Button>
         }
-        onRowClick={(row) => router.push(`/master/pegawai/${row.id}`)}
+        onRowClick={(row) => router.push(`/master/pegawai/${row.id}` as Route)}
         toolbarActions={
           <Button className={MASTER_ACTION_BUTTON_CLASSNAME} onClick={handleAdd}>
             <Users className="h-4 w-4" />
@@ -109,7 +115,13 @@ export function PegawaiView({ data }: PegawaiViewProps) {
 
       <FormDialog
         open={dialogOpen}
-        onOpenChange={(open) => setDialogOpen(open)}
+        onOpenChange={(open) => {
+          setDialogOpen(open);
+
+          if (!open) {
+            setNextCode(null);
+          }
+        }}
         title="Tambah Pegawai"
         description="Lengkapi identitas, penempatan, dan izin praktik pegawai klinik."
         className="sm:max-w-6xl"
@@ -120,11 +132,17 @@ export function PegawaiView({ data }: PegawaiViewProps) {
           </div>
         ) : (
           <PegawaiForm
+            key="new"
             editingDetail={null}
             nextCode={nextCode}
             onCancel={() => setDialogOpen(false)}
-            onSuccess={() => {
+            onSuccess={({ createdRow }) => {
+              if (createdRow) {
+                setRows((currentRows) => [...currentRows, createdRow]);
+              }
+
               setDialogOpen(false);
+              setNextCode(null);
               router.refresh();
             }}
           />

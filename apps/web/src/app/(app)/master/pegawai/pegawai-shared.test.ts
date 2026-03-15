@@ -5,6 +5,9 @@ import {
   JABATAN_OPTIONS,
   getPegawaiSchemaActionError,
   formatJabatanLabel,
+  getSelectNextValue,
+  getSelectOptionLabel,
+  getSelectValue,
   normalizeLicenseRows,
   validateLicenseLifetimeRule,
   withPegawaiSchemaFallback,
@@ -19,6 +22,22 @@ describe("pegawai shared helpers", () => {
     assert.equal(JABATAN_OPTIONS[0]?.key, "staf_non_medis");
     assert.equal(formatJabatanLabel("apoteker"), "Apoteker");
     assert.equal(formatJabatanLabel("unknown"), "-");
+  });
+
+  test("returns human-readable labels for select values", () => {
+    assert.equal(getSelectOptionLabel(JABATAN_OPTIONS, "analis_farmasi"), "Analis Farmasi");
+    assert.equal(getSelectOptionLabel(JABATAN_OPTIONS, "unknown"), null);
+  });
+
+  test("keeps select values controlled with empty string fallback", () => {
+    assert.equal(getSelectValue(undefined), "");
+    assert.equal(getSelectValue(null), "");
+    assert.equal(getSelectValue("dokter"), "dokter");
+  });
+
+  test("maps clear select sentinel back to empty string", () => {
+    assert.equal(getSelectNextValue("__empty__"), "");
+    assert.equal(getSelectNextValue("perawat"), "perawat");
   });
 
   test("drops blank license rows and trims values", () => {
