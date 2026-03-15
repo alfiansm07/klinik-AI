@@ -38,11 +38,18 @@ const REQUIRED_EMPLOYEE_LICENSE_COLUMNS = [
 export const PEGAWAI_SCHEMA_ERROR_MESSAGE =
   "Struktur tabel pegawai di database belum sesuai versi aplikasi. Jalankan migrasi database terbaru untuk membuka modul ini.";
 
+export const PEGAWAI_SCHEMA_ACTION_ERROR_MESSAGE =
+  "Modul pegawai belum siap digunakan. Jalankan migrasi database terbaru terlebih dahulu.";
+
 export class PegawaiSchemaError extends Error {
   constructor() {
     super(PEGAWAI_SCHEMA_ERROR_MESSAGE);
     this.name = "PegawaiSchemaError";
   }
+}
+
+export function getPegawaiSchemaActionError() {
+  return PEGAWAI_SCHEMA_ACTION_ERROR_MESSAGE;
 }
 
 export function readColumnNames(rows: ReadonlyArray<{ column_name: unknown }>) {

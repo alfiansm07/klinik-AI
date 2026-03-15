@@ -12,8 +12,13 @@ import {
   type PegawaiMaritalStatus,
   type PegawaiReligion,
 } from "./constants";
+import { PEGAWAI_SCHEMA_ACTION_ERROR_MESSAGE } from "./pegawai-schema";
 
 export { JABATAN_OPTIONS };
+
+export function getPegawaiSchemaActionError() {
+  return PEGAWAI_SCHEMA_ACTION_ERROR_MESSAGE;
+}
 
 export type PegawaiLicenseInput = {
   id?: string | null;

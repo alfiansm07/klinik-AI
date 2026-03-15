@@ -3,6 +3,7 @@ import { describe, test } from "node:test";
 
 import {
   JABATAN_OPTIONS,
+  getPegawaiSchemaActionError,
   formatJabatanLabel,
   normalizeLicenseRows,
   validateLicenseLifetimeRule,
@@ -79,5 +80,12 @@ describe("pegawai shared helpers", () => {
 
   test("exposes a clear schema mismatch message", () => {
     assert.match(PEGAWAI_SCHEMA_ERROR_MESSAGE, /migrasi database terbaru/i);
+  });
+
+  test("maps schema mismatch to a safe action error message", () => {
+    assert.equal(
+      getPegawaiSchemaActionError(),
+      "Modul pegawai belum siap digunakan. Jalankan migrasi database terbaru terlebih dahulu.",
+    );
   });
 });
